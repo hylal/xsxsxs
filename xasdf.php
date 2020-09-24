@@ -1,10 +1,6 @@
 <?php
 /*
-Plugin Name: Magic Order
-Description: Magic Order is The Best Plugin for Local e-Commerce and Fundraising.
-Version: 3.1.0.2
-Author: Ridwan Pujakesuma
-Author URI: http://sinkronus.com
+
 */
 
 if ( ! defined( 'ABSPATH' ) ) {
