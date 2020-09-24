@@ -501,7 +501,7 @@ function mgo_options_install_data() {
     	if($query==null){
 
     		if($value=='Confirmed'){
-				$ket_status = 'Order confirmed';
+				$ket_status = 'Order Terkonfirmasi';
 				$color = '#FED330';
 				$icon = 'confirmed.png';
 			}elseif($value=='Packaged'){
@@ -513,7 +513,7 @@ function mgo_options_install_data() {
 				$color = '#209ABF';
 				$icon = 'shipped.png';
 			}elseif($value=='Delivered'){
-				$ket_status = 'Your Order is delivered';
+				$ket_status = 'Pesanan Anda Telah Berhasil';
 				$color = '#20BF6B';
 				$icon = 'delivered.png';
 			}elseif($value=='RTS / Canceled'){
@@ -802,10 +802,50 @@ function filter_caldera_forms_render_entry_id( $entry_id, $form ) {
 		// $a++;
 
 };
+
 add_filter( 'caldera_forms_render_entry_id', 'filter_caldera_forms_render_entry_id', 10, 2 ); 
 
 
+
+	
+
+// BIKIN ORDER ID myaction_get_cs
+	//SELECT MAX( value ) FROM `wp_cf_form_entry_values` WHERE slug="mgo_orderid"
+	//SELECT MAX( MID(value,9,4)) FROM `wp_cf_form_entry_values` WHERE MID(value,3,6) = "999999" and slug="mgo_orderid"
+	function magic_order_kodeshw() {
+		global $wpdb;
+		$table_name00 = $wpdb->prefix . "cf_form_entry_values";
+		$showroom = $_POST['kodeshw'];
+
+		$maxid = $wpdb->get_results('SELECT MAX( MID(value,9,4)) as no_inovice
+		FROM '.$table_name00.' 
+		WHERE MID(value,3,6) = '.$showroom.'
+		AND slug="mgo_orderid"  ');
+ 
+		//$maxxid = $maxid[0]->data;
+		$query00 = $maxid[0]->no_inovice;
+		$kodeshw = ((int)$query00) + 1;
+		$kodeshowroom = sprintf("%'.04d", $kodeshw);
+		//return $kodeshowroom;
+
+		echo "$kodeshowroom";
+	
+		
+		wp_die();
+	
+		
+	} //var_dump($maxid);
+
+	add_action( 'wp_ajax_magic_order_kodeshw', 'magic_order_kodeshw' );
+    add_action( 'wp_ajax_no_priv_magic_order_kodeshw', 'magic_order_kodeshw' );
+	 
+	//var_dump($query00); //sampai sini
+		 
+
 add_action( 'wp_footer', 'magic_order_footer');
+
+
+
 function magic_order_footer() {
 
 	global $wpdb;
@@ -856,7 +896,6 @@ function magic_order_footer() {
     $plugin_license = $GLOBALS['mgovars']['plugin_license'];
 
 	$table_name2 = $wpdb->prefix . "mgo_settings";
-	
 
 	// Set Data on Mgo Settings
 	$data_array = array(
@@ -890,31 +929,7 @@ function magic_order_footer() {
 
 		}
 	}
-	//$table_name2 = $wpdb->prefix . "mgo_settings";
-	//nomor invoice
 	
-	//$table_name00 = $wpdb->prefix . "cf_form_entry_values";
-	
-	//$kodeshw = $wpdb->get_results('SELECT * from '.$table_name.' where entry_id="'.$entry_id.'" and slug="mgo_nama" ORDER BY id ASC');
-	//$query01 = $kode[0]->data;
-	//$nomorshw = ((int)$query01);
-	//$query01 = $nomorshw;
-	$query01 = "";
-	echo $query01;
-
-	
-	$kode = $wpdb->get_results('SELECT * from max(mid(value,9,4) 
-	FROM '.$table_name00.' 
-	WHERE slug="mgo_orderid" ');
-	$query00 = $kode[0]->data;
-	$urutan = ((int)$query00);
-	$urutan++;
-	$nourut = sprintf("%'.04d", $urutan);
-	$query00 = $query01.$nourut;
-	
-	
-
-	var_dump($query00);
 
 	$row2 = $wpdb->get_results('SELECT data from '.$table_name2.' where type="orderid_text" or type="orderid_max" or type="atc_button" or type="additional_button" or type="additional_text" or type="additional_link" or type="jquery_active" or type="fontawesome" ORDER BY id ASC');
 	$orderid_text = $row2[0]->data;
@@ -929,7 +944,7 @@ function magic_order_footer() {
         $jquery_active = '1';
     }
 	$fontawesome = $row2[7]->data;
-
+	//var_dump($orderid_text);
 
 	$table_name3 = $wpdb->prefix . 'mgo_settings';
 	$query_settings = $wpdb->get_results('SELECT data from '.$table_name3.' where type="wa_autosave" or type="minchar"');
@@ -1020,32 +1035,71 @@ function magic_order_footer() {
 				});
 			} catch (e) {}
 		}
-		// mulai disini
+
+		//select kodeshw
+
+		$("#fld_5135141_1").change(function(){
+			//alert("halo gan");
+			loadkodeshw();
+			   
+		});
+
+		//input orderid
+		$("#fld_6952926_1").click(function(){
+			//alert("order disini");
+		loadkodeshw();
+		});
+
+		function loadkodeshw(){
+			var idshowroom = $("#fld_5135141_1").val();
+			//alert(idshowroom);
+			if (idshowroom == 000000) {
+				isi = "MAAF! SILAHKAN PILIH KODE SHOWROOM ANDA";
+			}
+			else if (idshowroom => 000000){
+				isi = idshowroom;
+			}
+			//alert(isi);
+			//data:{mgo_kodeshw: idshowroom},
+
+		$.ajax({
+			url: object_name.templateUrl+"/wp-admin/admin-ajax.php",
+			type:"POST",
+			data:{
+				
+				action: "magic_order_kodeshw",
+				kodeshw: idshowroom },		
+		
+			 	success: function(response){
+				// alert(response);
+				 
+
+			var kodeshwnya = "OB" + isi + response;
+			$("#fld_6329534_1").val(kodeshwnya);
+		},
+			//error: function (xhr, ajaxOptions, throwerror) {
+				//alert(xhr.responseText);
+			//}
+		});
+
+	}
+
+
 		
 		
-           // $("#fld_5135141_1").change(function() {
-			//	var selectedOption = $("#fld_5135141_1 option:selected");
-			//	$("#fld_6329534Label").html("Kode Showroom = " + selectedOption.val()
-            //        + ", ID = " + selectedOption.text());
-			//});
-			
 		
-				   
-		
-	
 
 	    function makeid(max) {
 		  	var text = "";
-		  //	if(max==14 || max==15 || max==16){
-		  	//	if(max==14){max=4;}if(max==15){max=5;}if(max==16){max=6;}
-		  	//	var possible = "0123456789";
-	  		//}else{
-	  		//	var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-	  		//}
-		  	//
-		  	//for (var i = 0; i < max; i++){
-		    //	text += possible.charAt(Math.floor(Math.random() * possible.length));
-			//}
+		  	if(max==14 || max==15 || max==16){
+		  		if(max==14){max=4;}if(max==15){max=5;}if(max==16){max=6;}
+		  		var possible = "0123456789";
+	  		}else{
+	  			var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+	  		}
+   		  	for (var i = 0; i < max; i++){
+		    	text += possible.charAt(Math.floor(Math.random() * possible.length));
+			}
 			return text;
 		}
 
@@ -1063,17 +1117,10 @@ function magic_order_footer() {
 	    	// console.log(array_orderid[i]);
 	    	var id_mgo_orderid = array_orderid[i];
 			if(id_mgo_orderid!=null){
-				
-				$("#fld_5135141_1").change(function() {
-					var selectedOption = $("#fld_5135141_1 option:selected").text();
-					$("#fld_6329534_1").val("'.$orderid_text.'"+selectedOption+'.$query00.');
-				});
-				
 				var randomid = makeid('.$orderid_max.');
-				var fix_mgo_orderid = "'.$orderid_text.'"+'.$query00.';
+				var fix_mgo_orderid = "'.$orderid_text.'"+randomid;
 				var fields_mgo_orderid = id_mgo_orderid.split("-wrap");
 				try {
-					
 				  	document.getElementById(fields_mgo_orderid[0]).readOnly = true;
 					document.getElementById(fields_mgo_orderid[0]).value = fix_mgo_orderid;
 					orderid_form = fix_mgo_orderid;
@@ -8933,7 +8980,7 @@ class Readtime {
 	    	if($utc_status==1){
 	    		$diff     = time()- $timestamp + ((60*60)*($utc_value));
 	    	}else{
-	    		$diff     = time()- $timestamp + ((60*60)*-7);
+	    		$diff     = time()- $timestamp + ((60*60)*7);
 	    	}
 			
 			for($i = 0; $diff >= $length[$i] && $i < count($length)-1; $i++) {
@@ -10405,7 +10452,44 @@ function myaction_tracking_order() {
     $table_name = $wpdb->prefix . "mgo_orders";
     $table_name2 = $wpdb->prefix . "mgo_order_statuses";
     $table_name3 = $wpdb->prefix . "cf_form_entry_values";
-    $orderid = $_POST['datanya'][0];
+	$orderid = $_POST['datanya'][0];
+	//ini data tambahan dari sini
+	$entry_id = '';
+	$get_entryid = $wpdb->get_results("SELECT * from $table_name3 where value='$orderid' and slug='mgo_orderid' ");
+    if($get_entryid!=null){
+        $entry_id = $get_entryid[0]->entry_id;
+    }
+	$nama = '';
+    if($entry_id!=''){
+	    $get_name = $wpdb->get_results("SELECT * from $table_name3 where entry_id=$entry_id and slug='mgo_nama' ");
+	    if($get_name!=null){
+	        $nama = $get_name[0]->value;
+	    }
+	}
+
+	$nama_produk = '';
+	    if($entry_id!=''){
+		    $get_name_product = $wpdb->get_results("SELECT * from $table_name3 where entry_id=$entry_id and slug='mgo_nama_produk' ");
+		    if($get_name_product!=null){
+		        $nama_produk = $get_name_product[0]->value;
+		    }
+		}
+
+	$nama_sales = '';
+	    if($entry_id!=''){
+		    $get_nama_sales = $wpdb->get_results("SELECT * from $table_name3 where entry_id=$entry_id and slug='mgo_nama_sales' ");
+		    if($get_nama_sales!=null){
+		        $nama_sales = $get_nama_sales[0]->value;
+		    }
+		}
+	$nama_showroom = '';
+	    if($entry_id!=''){
+		    $get_nama_showroom = $wpdb->get_results("SELECT * from $table_name3 where entry_id=$entry_id and slug='mgo_nama_showroom' ");
+		    if($get_nama_showroom!=null){
+		        $nama_showroom = $get_nama_showroom[0]->value;
+		    }
+		}
+
 
     $jumlah_form = $wpdb->get_results("SELECT a.*, b.nama_status, b.color, b.ket_status  from $table_name a LEFT JOIN $table_name2 b ON a.status_id = b.id where order_id='$orderid' and nama_status!='' ");
 
@@ -10414,11 +10498,16 @@ function myaction_tracking_order() {
     	$cek_on_caldera = $wpdb->get_results("SELECT * from $table_name3 where value='$orderid' and slug='mgo_orderid' ");
 	    if($cek_on_caldera!=null){
 	        echo '
-			<div class="icon-order" style="margin-top:30px;text-align:center;background: #F0F6F8;padding: 40px 0 20px 0;margin-bottom: 2px;padding-bottom:30px;width: 100%; min-height: 210px; border-radius: 0;">
+			<div class="icon-order" style="margin-top:30px;text-align:left;background: #F0F6F8;padding: 40px 0 20px 0;margin-bottom: 2px;padding-bottom:30px;width: 100%; min-height: 210px; border-radius: 0;">
 				<img src="'.WP_PLUGIN_URL.'/magic-order/assets/icons/waiting_payment.png" style="margin: 0 auto;width:80px;" />
-				<h3 style="margin-top:10px;font-size:24px;">Waiting Payment</h3>
-				<h4 style="margin-top:-20px;font-size:16px;">ORDER ID: <span style="color:#cd2653;"><b>'.$orderid.'</b></span></h4>
-				<p style="margin-top:-20px;font-size:16px;padding:20px 20px;font-style:italic;font-family:"Lato", FontAwesome, lato, sans-serif !important;">Silahkan transfer sesuai dengan nominal pesanan yang anda pesan agar kami segera memproses pesanan anda.</p>
+				<h3 style="margin-top:10px;font-size:24px;">Terima Kasih Ya, Data Anda sudah tercatat</h3><br />
+				<h4 style="margin-top:-20px;font-size:16px;">ORDER ID: <span style="color:#cd2653;"><b>'.$orderid.'</b></span></h4><br />
+				<h4 style="margin-top:-20px;font-size:16px;">NAMA CUSTOMER: <span style="color:#cd2653;"><b>'.$nama.'</b></span></h4><br />
+				<h4 style="margin-top:-20px;font-size:16px;">NAMA PRODUK: <span style="color:#cd2653;"><b>'.$nama_produk.'</b></span></h4><br />
+				<h4 style="margin-top:-20px;font-size:16px;">NAMA SALES: <span style="color:#cd2653;"><b>'.$nama_sales.'</b></span></h4><br />
+				<h4 style="margin-top:-20px;font-size:16px;">NAMA SHOWROOM: <span style="color:#cd2653;"><b>'.$nama_showroom.'</b></span></h4><br />
+
+				<p style="margin-top:-20px;font-size:16px;padding:20px 20px;font-style:italic;font-family:"Lato", FontAwesome, lato, sans-serif !important;">Anda tidak perlu memasukkan lagi, jika terjadi kesalahan hubungi Tim E-Commerce.</p>
 			</div>
 			';
 	    }else{
@@ -10501,14 +10590,28 @@ function myaction_tracking_order() {
 			    <em>4</em>
 			    <span>Delivered</span>
 			  </li>
-		</ol>';
+		</ol>
+		<div class="icon-order" style="margin-top:30px;text-align:left;background: #F0F6F8;padding: 40px 0 20px 0;margin-bottom: 2px;padding-bottom:30px;width: 100%; min-height: 210px; border-radius: 0;">
+				<img src="'.WP_PLUGIN_URL.'/magic-order/assets/icons/waiting_payment.png" style="margin: 0 auto;width:80px;" />
+				<h3 style="margin-top:10px;font-size:24px;">Terima Kasih Ya, Data Anda sudah tercatat</h3><br />
+				<h4 style="margin-top:-20px;font-size:16px;">ORDER ID: <span style="color:#cd2653;"><b>'.$orderid.'</b></span></h4><br />
+				<h4 style="margin-top:-20px;font-size:16px;">NAMA CUSTOMER: <span style="color:#cd2653;"><b>'.$nama.'</b></span></h4><br />
+				<h4 style="margin-top:-20px;font-size:16px;">NAMA PRODUK: <span style="color:#cd2653;"><b>'.$nama_produk.'</b></span></h4><br />
+				<h4 style="margin-top:-20px;font-size:16px;">NAMA SALES: <span style="color:#cd2653;"><b>'.$nama_sales.'</b></span></h4><br />
+				<h4 style="margin-top:-20px;font-size:16px;">NAMA SHOWROOM: <span style="color:#cd2653;"><b>'.$nama_showroom.'</b></span></h4><br />
+
+				<p style="margin-top:-20px;font-size:16px;padding:20px 20px;font-style:italic;font-family:"Lato", FontAwesome, lato, sans-serif !important;">Anda tidak perlu memasukkan lagi, jika terjadi kesalahan hubungi Tim E-Commerce.</p>
+			</div>'
+		
+		
+		;
 		}
 
 		echo '
 		<div>
 			<div class="icon-order" style="margin-top:30px;text-align:center;background: #F0F6F8;padding: 40px 0 20px 0;margin-bottom: 2px;padding-bottom:30px;width: 100%; min-height: 210px; border-radius: 0;">
 				<img src="'.WP_PLUGIN_URL.'/magic-order/assets/icons/'.$statusnya[0]->icon.'" style="margin: 0 auto;width:80px;" />
-				<h3 style="margin-top:10px;font-size:24px;">'.$statusnya[0]->ket_status.'</h3>
+				<h3 style="margin-top:10px;font-size:24px;">'.$statusnya[0]->ket_status.'</h3><br><br>
 				<h4 style="margin-top:-20px;font-size:16px;">ORDER ID: <span style="color:#cd2653;"><b>'.$orderid.'</b></span></h4>
 			</div>
 		';
@@ -15840,4 +15943,1699 @@ require_once(ROOTDIR . 'main/mgo-statistic.php');
 require_once(ROOTDIR . 'main/mgo-atc.php');
 require_once(ROOTDIR . 'main/mgo-autosave-wa.php');
 require_once(ROOTDIR . 'main/mgo-autosave-wa-settings.php');
-require_once(ROOTDIR . 'main/mgo-form-followup.php');
+require_once(ROOTDIR . 'main/mgo-form-followup.php');'wa_number' => $wa_number), //data
+	            array('order_id' => $order_id), //where
+	            array('%s'), //data format
+	            array('%s') //where format
+	        );  
+	        echo 'Update WA Number.';
+	    }else {
+	    	if($order_id==null || $order_id==''){
+		        echo "Can't save! Order ID Null.";
+	    	}else{
+	    		$wpdb->insert(
+		            $table_name, //table
+		            array('name' => $name, 'wa_number' => $wa_number, 'form_id' => $form_id, 'order_id' => $order_id, 'cs_id' => $cs_id, 'status_followup' => 0, 'created_at' => $date_now), //data
+		            array('%s', '%s') //data format         
+		        );
+		        echo 'Save success.';
+	    	}
+	    }
+	}else{
+		echo 'not-active';
+	}
+    
+    wp_die();
+
+} 
+add_action( 'wp_ajax_myaction_autosave_wa', 'myaction_autosave_wa' );
+add_action( 'wp_ajax_nopriv_myaction_autosave_wa', 'myaction_autosave_wa' );
+
+
+function myaction_tracking_order() {
+	
+    global $wpdb;
+    $table_name = $wpdb->prefix . "mgo_orders";
+    $table_name2 = $wpdb->prefix . "mgo_order_statuses";
+    $table_name3 = $wpdb->prefix . "cf_form_entry_values";
+    $orderid = $_POST['datanya'][0];
+
+    $jumlah_form = $wpdb->get_results("SELECT a.*, b.nama_status, b.color, b.ket_status  from $table_name a LEFT JOIN $table_name2 b ON a.status_id = b.id where order_id='$orderid' and nama_status!='' ");
+
+    if($jumlah_form==null){
+
+    	$cek_on_caldera = $wpdb->get_results("SELECT * from $table_name3 where value='$orderid' and slug='mgo_orderid' ");
+	    if($cek_on_caldera!=null){
+	        echo '
+			<div class="icon-order" style="margin-top:30px;text-align:center;background: #F0F6F8;padding: 40px 0 20px 0;margin-bottom: 2px;padding-bottom:30px;width: 100%; min-height: 210px; border-radius: 0;">
+				<img src="'.WP_PLUGIN_URL.'/magic-order/assets/icons/waiting_payment.png" style="margin: 0 auto;width:80px;" />
+				<h3 style="margin-top:10px;font-size:24px;">Waiting Payment</h3>
+				<h4 style="margin-top:-20px;font-size:16px;">ORDER ID: <span style="color:#cd2653;"><b>'.$orderid.'</b></span></h4>
+				<p style="margin-top:-20px;font-size:16px;padding:20px 20px;font-style:italic;font-family:"Lato", FontAwesome, lato, sans-serif !important;">Silahkan transfer sesuai dengan nominal pesanan yang anda pesan agar kami segera memproses pesanan anda.</p>
+			</div>
+			';
+	    }else{
+	    	echo '
+	    		<div class="icon-order" style="margin-top:30px;text-align:center;background: #F0F6F8;padding: 20px 0 20px 0;margin-bottom: 2px;width: 100%; min-height: 100px; border-radius: 0;">
+					<h3 style="margin-top:10px;">No Data!</h3>
+				</div>
+			';
+	    }
+
+    	
+    }else{
+    	$getlast = $wpdb->get_results("SELECT a.*, b.nama_status, b.color, b.ket_status  from $table_name a LEFT JOIN $table_name2 b ON a.status_id = b.id where order_id='$orderid' and nama_status!='' ORDER BY id DESC");
+    	$status_id = $getlast[0]->status_id;
+    	$statusnya = $wpdb->get_results('SELECT * from '.$table_name2.' where id="'.$status_id.'"');
+
+    	$icon = '';
+    	$status = '';
+
+    	$done0='todo';
+    	if($jumlah_form[0]!=null){$done0='done';};
+    	$done1='todo';
+    	if($jumlah_form[1]!=null){$done1='done';};
+    	$done2='todo';
+    	if($jumlah_form[2]!=null){$done2='done';};
+    	$done3='todo';
+    	if($jumlah_form[3]!=null){$done3='done';};
+
+
+    	$query = $wpdb->get_results("SELECT a.*, b.nama_status, b.color, b.ket_status  from $table_name a LEFT JOIN $table_name2 b ON a.status_id = b.id where order_id='$orderid' and nama_status!='' ");
+
+	    $statuses = '';
+	    foreach ($query as $row) {
+	    	if($row->ket_order=='' || $row->ket_order==null){
+	    		$padding_bottom = 'padding-bottom:35px;';
+	    	}else{
+	    		$padding_bottom = 'padding-bottom:50px;';
+	    	}
+			$statuses .= '
+						<li class="timeline-item" style="'.$padding_bottom.'">
+							<div>
+								<div class="text-date">
+									'.date("F j, Y",strtotime($row->created_at)).'<br>
+									'.date("H:i ",strtotime($row->created_at)).'
+								</div>
+								<p class="div-text-title-info" style="margin-top:-60px;margin-left:180px;">
+									<span class="text-title" style="color:'.$row->color.'">
+										'.$row->nama_status.'
+									</span>
+									<br>
+									<span class="text-info" style="font-size: 16px;">
+										'.$row->ket_status.'
+									</span>
+									<br>
+									<span class="text-info" style="font-size: 14px;">
+										'.$row->ket_order.'
+									</span>
+								</p>
+							</div>
+						</li>
+						';
+	    }
+
+	    if($statusnya[0]->icon!='rts.png'){
+    	echo '
+		<ol class="track-progress">
+			  <li class="'.$done0.'">
+			    <em>1</em>
+			    <span>Confirmed</span>
+			  </li>
+			  <li class="'.$done1.'">
+			    <em>2</em>
+			    <span>Packaged</span>
+			  </li>
+			  <li class="'.$done2.'">
+			    <em>3</em>
+			    <span>Shipped</span>
+			  </li>
+			  <li class="'.$done3.'">
+			    <em>4</em>
+			    <span>Delivered</span>
+			  </li>
+		</ol>';
+		}
+
+		echo '
+		<div>
+			<div class="icon-order" style="margin-top:30px;text-align:center;background: #F0F6F8;padding: 40px 0 20px 0;margin-bottom: 2px;padding-bottom:30px;width: 100%; min-height: 210px; border-radius: 0;">
+				<img src="'.WP_PLUGIN_URL.'/magic-order/assets/icons/'.$statusnya[0]->icon.'" style="margin: 0 auto;width:80px;" />
+				<h3 style="margin-top:10px;font-size:24px;">'.$statusnya[0]->ket_status.'</h3>
+				<h4 style="margin-top:-20px;font-size:16px;">ORDER ID: <span style="color:#cd2653;"><b>'.$orderid.'</b></span></h4>
+			</div>
+		';
+
+		if($statusnya[0]->icon!='rts.png'){
+    	echo '
+			<div class="panel panel-white no-radius" style="padding-left: 0%;padding-top: 3%;padding-bottom: 1%;background: #fff;">
+				<div class="panel-body">
+					<ul class="timeline-xs margin-top-20 margin-bottom-20" style="border-left: 1px solid #e4e4e4;padding-left: 11px;">
+						'.$statuses.'
+					</ul>
+				</div>
+			</div>
+		</div>
+		';
+		}
+    }
+    
+    wp_die();
+
+} 
+add_action( 'wp_ajax_myaction_tracking_order', 'myaction_tracking_order' );
+add_action( 'wp_ajax_nopriv_myaction_tracking_order', 'myaction_tracking_order' );
+
+
+
+function tracking_func( $atts ){
+	return '
+	<form class="searchform cf" style="width: 418px;">
+	  <div contenteditable="true" placeholder="Paste your order ID..." id="your_orderid"></div>
+	  <button type="button" id="tracking_order" style="position: absolute;  padding: 13px 15px;  margin-top: -3px;">Tracking Order</button>
+	</form>
+
+	<div id="result_tracking_order"></div>
+	<style>
+	</style>
+	';
+}
+add_shortcode( 'mgotracking', 'tracking_func' );
+
+/*
+function myaction_save_phonesetting() {
+	
+    global $wpdb;
+    $table_name = $wpdb->prefix . "mgo_settings";
+
+    // $userkey = $_POST['datanya'][0];
+    // $passkey = $_POST['datanya'][1];
+    $notif 	= $_POST['datanya'][0];
+    // $urlnotif = $_POST['datanya'][3];
+    $urlcs = $_POST['datanya'][1];
+    $opentab = $_POST['datanya'][2];
+    $formresend = $_POST['datanya'][3];
+
+    // $wpdb->update(
+    //     $table_name, //table
+    //     array('data' => $userkey), //data
+    //     array('type' => 'userkey'), //where
+    //     array('%s'), //data format
+    //     array('%s') //where format
+    // );
+    // $wpdb->update(
+    //     $table_name, //table
+    //     array('data' => $passkey), //data
+    //     array('type' => 'passkey'), //where
+    //     array('%s'), //data format
+    //     array('%s') //where format
+    // );
+
+
+    $wpdb->update(
+        $table_name, //table
+        array('data' => $notif), //data
+        array('type' => 'notif'), //where
+        array('%s'), //data format
+        array('%s') //where format
+    );
+    // $wpdb->update(
+    //     $table_name, //table
+    //     array('data' => $urlnotif), //data
+    //     array('type' => 'urlnotif'), //where
+    //     array('%s'), //data format
+    //     array('%s') //where format
+    // );
+    $wpdb->update(
+        $table_name, //table
+        array('data' => $urlcs), //data
+        array('type' => 'urlcs'), //where
+        array('%s'), //data format
+        array('%s') //where format
+    );
+    $wpdb->update(
+        $table_name, //table
+        array('data' => $opentab), //data
+        array('type' => 'opentab'), //where
+        array('%s'), //data format
+        array('%s') //where format
+    );
+    $wpdb->update(
+        $table_name, //table
+        array('data' => $formresend), //data
+        array('type' => 'formresend'), //where
+        array('%s'), //data format
+        array('%s') //where format
+    );
+
+	echo '<span class="button" style="margin-top: 10px;border: 0;background: none;box-shadow: none;cursor: text;margin-left: 20px;color: #2EC26A;">Phone Notification Setting Save Successfully.</span>';
+    
+    wp_die();
+
+} 
+add_action( 'wp_ajax_myaction_save_phonesetting', 'myaction_save_phonesetting' );
+add_action( 'wp_ajax_nopriv_myaction_save_phonesetting', 'myaction_save_phonesetting' );
+*/
+
+
+function myaction_verifyphone() {
+	
+    global $wpdb;
+    $table_name = $wpdb->prefix . "mgo_settings";
+    $table_name2 = $wpdb->prefix . "mgo_phone";
+    $table_name3 = $wpdb->prefix . "cf_form_entry_values";
+
+    $kode = $_POST['datanya'][0];
+    $orderid = $_POST['datanya'][1];
+    $redirect_link = $_POST['datanya'][2];
+
+    $entry_id = '';
+	$get_entryid = $wpdb->get_results("SELECT * from $table_name3 where value='$orderid' and slug='mgo_orderid' ");
+    if($get_entryid!=null){
+        $entry_id = $get_entryid[0]->entry_id;
+    }
+
+    $nama = '';
+    if($entry_id!=''){
+	    $get_name = $wpdb->get_results("SELECT * from $table_name3 where entry_id=$entry_id and slug='mgo_nama' ");
+	    if($get_name!=null){
+	        $nama = $get_name[0]->value;
+	    }
+	}
+
+	// Open Tab
+    $opentab = 'self';
+
+	$set_nama = str_replace('%mgo_nama%', $nama, $redirect_link);
+	$set_orderid = str_replace('%mgo_orderid%', $orderid, $set_nama);
+	$urlredirect_updated = $set_orderid;
+    
+    
+    $verify_code = $wpdb->get_results('SELECT * from '.$table_name2.' where orderid="'.$orderid.'" and code="'.$kode.'" ');
+
+    if($verify_code!=null){
+    	$wpdb->update(
+            $table_name2, //table
+            array('status' => 1), //data
+            array('orderid' => $orderid), //where
+            array('%s'), //data format
+            array('%s') //where format
+        );
+
+    	if($entry_id!=''){
+	        // Update WA si orderan di Caldera Form
+	        $wpdb->update(
+	            $table_name3, //table
+	            array('value' => $verify_code[0]->phone), //data
+	            array('entry_id' => $entry_id, 'slug' => 'mgo_wa'), //where
+	            array('%s'), //data format
+	            array('%s') //where format
+	        );
+    	}
+    	echo 'correct__'.$urlredirect_updated.'__'.$opentab;
+    }else{
+    	echo 'false__0__0';
+    }    
+    
+    wp_die();
+
+} 
+add_action( 'wp_ajax_myaction_verifyphone', 'myaction_verifyphone' );
+add_action( 'wp_ajax_nopriv_myaction_verifyphone', 'myaction_verifyphone' );
+
+
+
+/*
+function myaction_sendcode() {
+	
+    global $wpdb;
+    $table_name = $wpdb->prefix . "mgo_settings";
+    $table_name2 = $wpdb->prefix . "mgo_phone";
+    $table_name3 = $wpdb->prefix . "cf_form_entry_values";
+
+    $orderid = $_POST['datanya'][0];
+    $phone_number = $_POST['datanya'][1];
+    $notif = $_POST['datanya'][2];
+    $type_otp = $_POST['datanya'][3];
+
+    $entry_id = '';
+	$get_entryid = $wpdb->get_results("SELECT * from $table_name3 where value='$orderid' and slug='mgo_orderid' ");
+    if($get_entryid!=null){
+        $entry_id = $get_entryid[0]->entry_id;
+    }
+
+    $nama = '';
+    if($entry_id!=''){
+	    $get_name = $wpdb->get_results("SELECT * from $table_name3 where entry_id=$entry_id and slug='mgo_nama' ");
+	    if($get_name!=null){
+	        $nama = $get_name[0]->value;
+	    }
+	}
+
+    $nama_produk = '';
+    if($entry_id!=''){
+	    $get_name_product = $wpdb->get_results("SELECT * from $table_name3 where entry_id=$entry_id and slug='mgo_nama_produk' ");
+	    if($get_name_product!=null){
+	        $nama_produk = $get_name_product[0]->value;
+	    }
+	}
+
+	$csid = '';
+    if($entry_id!=''){
+	    $get_csid = $wpdb->get_results("SELECT * from $table_name3 where entry_id=$entry_id and slug='mgo_csid' ");
+	    if($get_csid!=null){
+	        $csid = $get_csid[0]->value;
+	    }
+	}
+
+	// URL API
+	$row = $wpdb->get_results('SELECT data from '.$table_name.' where type="sms_status" or type="sms_userkey" or type="sms_passkey" or type="sms_apiurl" or type="wanotif_status" or type="wanotif_type" or type="wanotif_apikey" or type="wanotif_url" or type="wanotif_csrotator" ORDER BY id ASC');
+	// $notif = $row[0]->data;
+	$sms_status = $row[0]->data;
+	$sms_userkey = $row[1]->data;
+	$sms_passkey = $row[2]->data;
+	$sms_apiurl = $row[3]->data;
+	$wanotif_status = $row[4]->data; // 0: off, 1: aktif
+	$wanotif_type = $row[5]->data; // 0: single sender, 1: cs rotator sender
+	$wanotif_apikey = $row[6]->data;
+	$wanotif_url = $row[7]->data;
+	$wanotif_csrotator = $row[8]->data;
+
+	// $row = $wpdb->get_results('SELECT data from '.$table_name.' where type="sms_status" or type="sms_userkey" or type="sms_passkey" or type="sms_apiurl" ORDER BY id ASC');
+	// // $notif = $row[0]->data;
+	// $sms_status = $row[0]->data;
+	// $sms_userkey = $row[1]->data;
+	// $sms_passkey = $row[2]->data;
+	// $sms_apiurl = $row[3]->data;
+
+    
+    $data_verifikasi = $wpdb->get_results('SELECT * from '.$table_name2.' where orderid="'.$orderid.'" ');
+
+    if($data_verifikasi!=null){
+
+    	$data_verifikasi2 = $wpdb->get_results('SELECT * from '.$table_name2.' where orderid="'.$orderid.'" and phone="'.$phone_number.'" ');
+    	
+    	// cek ada gak orderid dengan phone yang sama, klo gak phone update
+    	if($data_verifikasi2==null){
+			$wpdb->update(
+	            $table_name2, //table
+	            array('phone' => $phone_number), //data
+	            array('orderid' => $orderid), //where
+	            array('%s'), //data format
+	            array('%s') //where format
+	        );
+    	}
+
+		$set_nama = str_replace('%mgo_nama%', $nama, $notif);
+		$set_nama_produk = str_replace('%mgo_nama_produk%', $nama_produk, $set_nama);
+		$set_kode = str_replace('%otp_code%', $data_verifikasi[0]->code, $set_nama_produk);
+		$message = $set_kode;
+
+		$url = $sms_apiurl;
+		$curlHandle = curl_init();
+		curl_setopt($curlHandle, CURLOPT_URL, $url);
+		curl_setopt($curlHandle, CURLOPT_HEADER, 0);
+		curl_setopt($curlHandle, CURLOPT_RETURNTRANSFER, 1);
+		curl_setopt($curlHandle, CURLOPT_SSL_VERIFYHOST, 2);
+		curl_setopt($curlHandle, CURLOPT_SSL_VERIFYPEER, 0);
+		curl_setopt($curlHandle, CURLOPT_TIMEOUT,30);
+		curl_setopt($curlHandle, CURLOPT_POST, 1);
+		curl_setopt($curlHandle, CURLOPT_POSTFIELDS, array(
+		    'userkey' => $sms_userkey,
+		    'passkey' => $sms_passkey,
+		    'nohp' => $phone_number,
+		    'pesan' => $message
+		));
+		$results = json_decode(curl_exec($curlHandle), true);
+		curl_close($curlHandle);
+    	
+    	echo 'correct';
+
+    }else{
+    	echo 'false';
+    }    
+    
+    wp_die();
+
+} 
+add_action( 'wp_ajax_myaction_sendcode', 'myaction_sendcode' );
+add_action( 'wp_ajax_nopriv_myaction_sendcode', 'myaction_sendcode' );
+*/
+
+
+function myaction_generate_sendcode() {
+	
+    global $wpdb;
+    $table_name = $wpdb->prefix . "mgo_settings";
+    $table_name2 = $wpdb->prefix . "mgo_phone";
+    $table_name3 = $wpdb->prefix . "cf_form_entry_values";
+
+    $orderid = $_POST['datanya'][0];
+    $phone_number = $_POST['datanya'][1];
+    $notif = $_POST['datanya'][2];
+    $type_otp = $_POST['datanya'][3];
+    $type_send = $_POST['datanya'][4];
+
+    $a1 = mt_rand(0,9);
+	$a2 = mt_rand(0,9);
+	$a3 = mt_rand(0,9);
+	$a4 = mt_rand(0,9);
+	$kode = ''.$a1.$a2.$a3.$a4.'';
+
+	$entry_id = '';
+	$get_entryid = $wpdb->get_results("SELECT * from $table_name3 where value='$orderid' and slug='mgo_orderid' ");
+    if($get_entryid!=null){
+        $entry_id = $get_entryid[0]->entry_id;
+    }
+
+
+	if($entry_id!=''){
+
+		$nama = '';
+	    if($entry_id!=''){
+		    $get_name = $wpdb->get_results("SELECT * from $table_name3 where entry_id=$entry_id and slug='mgo_nama' ");
+		    if($get_name!=null){
+		        $nama = $get_name[0]->value;
+		    }
+		}
+
+		$nama_produk = '';
+	    if($entry_id!=''){
+		    $get_name_product = $wpdb->get_results("SELECT * from $table_name3 where entry_id=$entry_id and slug='mgo_nama_produk' ");
+		    if($get_name_product!=null){
+		        $nama_produk = $get_name_product[0]->value;
+		    }
+		}
+
+		$csid = '';
+	    if($entry_id!=''){
+		    $get_csid = $wpdb->get_results("SELECT * from $table_name3 where entry_id=$entry_id and slug='mgo_csid' ");
+		    if($get_csid!=null){
+		        $csid = $get_csid[0]->value;
+		    }
+		}
+
+		// URL API
+		$row = $wpdb->get_results('SELECT data from '.$table_name.' where type="sms_status" or type="sms_userkey" or type="sms_passkey" or type="sms_apiurl" or type="wanotif_status" or type="wanotif_type" or type="wanotif_apikey" or type="wanotif_url" or type="wanotif_csrotator" ORDER BY id ASC');
+		// $notif = $row[0]->data;
+		$sms_status = $row[0]->data;
+		$sms_userkey = $row[1]->data;
+		$sms_passkey = $row[2]->data;
+		$sms_apiurl = $row[3]->data;
+		$wanotif_status = $row[4]->data; // 0: off, 1: aktif
+		$wanotif_type = $row[5]->data; // 0: single sender, 1: cs rotator sender
+		$wanotif_apikey = $row[6]->data;
+		$wanotif_url = $row[7]->data;
+		$wanotif_csrotator = $row[8]->data;
+
+		// echo (json_encode($row));
+
+
+		if($type_send=='generate'){
+			// CHECK PHONE
+		    $data_verifikasi = $wpdb->get_results('SELECT * from '.$table_name2.' where orderid="'.$orderid.'" ');
+
+		    // $send = 0;
+		    // cek berdasarkan orderid
+		    if($data_verifikasi==null){
+		    	// create
+		    	$wpdb->insert(
+		            $table_name2, //table
+		            array('orderid' => $orderid, 'phone' => $phone_number, 'code' => $kode, 'status' => 0), //data
+		            array('%s', '%s') //data format         
+		        );
+		    }else{
+		    	// cek lagi berdasarkan orderid dan phone
+		    	$data_verifikasi2 = $wpdb->get_results('SELECT * from '.$table_name2.' where orderid="'.$orderid.'" and phone="'.$phone_number.'" ');
+		    	$kode = $data_verifikasi[0]->code;
+
+		    	// cek ada gak orderid dengan phone yang sama, klo gak phone update
+		    	if($data_verifikasi2==null){
+		    		// update phone
+					$wpdb->update(
+			            $table_name2, //table
+			            array('phone' => $phone_number), //data
+			            array('orderid' => $orderid), //where
+			            array('%s'), //data format
+			            array('%s') //where format
+			        );
+		    	}
+		    }
+		}else{ // RESEND CODE
+
+			$data_verifikasi = $wpdb->get_results('SELECT * from '.$table_name2.' where orderid="'.$orderid.'" ');
+
+		    if($data_verifikasi!=null){
+
+				$data_verifikasi2 = $wpdb->get_results('SELECT * from '.$table_name2.' where orderid="'.$orderid.'" and phone="'.$phone_number.'" ');
+		    	
+				// cek ada gak orderid dengan phone yang sama, klo gak phone update
+				if($data_verifikasi2==null){
+					$wpdb->update(
+			            $table_name2, //table
+			            array('phone' => $phone_number), //data
+			            array('orderid' => $orderid), //where
+			            array('%s'), //data format
+			            array('%s') //where format
+			        );
+				}
+
+				$kode = $data_verifikasi[0]->code;
+
+			}else{
+				echo 'no_sendcode';
+				return false;
+			}
+		}
+
+
+	    // MESSAGE
+	    $set_nama = str_replace('%mgo_nama%', $nama, $notif);
+		$set_nama_produk = str_replace('%mgo_nama_produk%', $nama_produk, $set_nama);
+		$set_kode = str_replace('%otp_code%', $kode, $set_nama_produk);
+		$message = $set_kode;
+
+
+		// SENDER
+	    if($type_otp=='wa'){
+
+	    	if($wanotif_type==0){
+				$apikey = $wanotif_apikey;
+
+				// SET PHONE
+				if($phone_number!=''){
+
+					$phone = hp($phone_number);
+					$url = $wanotif_url.'/send';
+
+					$spintax = new Spintax();
+					$messagenya = $spintax->process($message);
+
+					$curl = curl_init();
+					curl_setopt($curl, CURLOPT_URL, $url);
+					curl_setopt($curl, CURLOPT_HEADER, 0);
+					curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
+					curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, 2);
+					curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, 0);
+					curl_setopt($curl, CURLOPT_TIMEOUT,30);
+					curl_setopt($curl, CURLOPT_POST, 1);
+					curl_setopt($curl, CURLOPT_POSTFIELDS, array(
+					    'Apikey'    => $apikey,
+					    'Phone'     => $phone,
+					    'Message'   => $message,
+					));
+					$response = curl_exec($curl);
+					curl_close($curl); 
+					echo 'sendcode'; 
+				}
+
+			}else{
+				// YANG KIRIM SI CS ROTATOR
+
+				if($csid!=''){
+
+					$apikey_nya = '';
+					$fields = json_decode($wanotif_csrotator, true);
+					if(!empty($fields)){
+						foreach ($fields as $key => $value ) {
+							if($key==$csid){
+								$apikey_nya = $value;
+							}
+						}
+
+						$apikey = $apikey_nya;
+
+				    	// SET PHONE
+						if($phone_number!=''){
+							$phone = hp($phone_number);
+							$url = $wanotif_url.'/send';
+
+							$spintax = new Spintax();
+							$messagenya = $spintax->process($message);
+
+							$curl = curl_init();
+							curl_setopt($curl, CURLOPT_URL, $url);
+							curl_setopt($curl, CURLOPT_HEADER, 0);
+							curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
+							curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, 2);
+							curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, 0);
+							curl_setopt($curl, CURLOPT_TIMEOUT,30);
+							curl_setopt($curl, CURLOPT_POST, 1);
+							curl_setopt($curl, CURLOPT_POSTFIELDS, array(
+							    'Apikey'    => $apikey,
+							    'Phone'     => $phone,
+							    'Message'   => $messagenya,
+							));
+							$response = curl_exec($curl);
+							curl_close($curl); 
+
+							echo 'sendcode';
+						}
+					}
+
+			    	
+				}
+			}
+
+	    }else{
+
+	    	if($sms_status=='1'){
+	    		
+				$url = $sms_apiurl;
+				$curlHandle = curl_init();
+				curl_setopt($curlHandle, CURLOPT_URL, $url);
+				curl_setopt($curlHandle, CURLOPT_HEADER, 0);
+				curl_setopt($curlHandle, CURLOPT_RETURNTRANSFER, 1);
+				curl_setopt($curlHandle, CURLOPT_SSL_VERIFYHOST, 2);
+				curl_setopt($curlHandle, CURLOPT_SSL_VERIFYPEER, 0);
+				curl_setopt($curlHandle, CURLOPT_TIMEOUT,30);
+				curl_setopt($curlHandle, CURLOPT_POST, 1);
+				curl_setopt($curlHandle, CURLOPT_POSTFIELDS, array(
+				    'userkey' => $sms_userkey,
+				    'passkey' => $sms_passkey,
+				    'nohp' => $phone_number,
+				    'pesan' => $message
+				));
+				$results = json_decode(curl_exec($curlHandle), true);
+				curl_close($curlHandle);
+				
+				echo 'sendcode'; 
+
+	    	}else {
+
+	    		echo 'no_sendcode';
+	    	}
+	    }
+	}else{
+		echo 'no_sendcode';
+	}
+			
+    
+    wp_die();
+
+} 
+add_action( 'wp_ajax_myaction_generate_sendcode', 'myaction_generate_sendcode' );
+add_action( 'wp_ajax_nopriv_myaction_generate_sendcode', 'myaction_generate_sendcode' );
+
+
+
+function mgootp_func( $atts ){
+	global $wpdb;
+	$table_name = $wpdb->prefix . "mgo_settings";
+	$row = $wpdb->get_results('SELECT data from '.$table_name.' where type="formresend" ORDER BY id ASC');
+	$formresend = $row[0]->data;
+
+	$form_resend = 'none';
+	$kirim_ulang = 'inline';
+
+	$atts = shortcode_atts( array(
+		'redirect' => null,
+		'title' => null,
+		'subtitle' => null,
+		'message' => null,
+		'type' => null,
+	), $atts, 'mgootp' );
+	
+
+	$redirect = '';
+	if($atts['redirect']!==null){
+  		$redirect = $atts['redirect'];
+  	}
+
+	$title = 'Verifikasi Kode OTP';
+	if($atts['title']!==null){
+  		$title = $atts['title'];
+  	}
+
+	$type_otp = 'sms';
+	if($atts['type']!==null){
+  		$type_otp = $atts['type'];
+  	}
+
+  	if($type_otp=='wa'){
+  		$type_otp = 'wa';
+  	}else{
+  		$type_otp = 'sms';
+  	}
+
+
+	$subtitle = 'Masukkan 4 kode verifikasi yang dikirimkan ke Handphone anda.';
+	if($atts['subtitle']!==null){
+  		$subtitle = $atts['subtitle'];
+  	}
+
+	$message = '%mgo_nama%, %otp_code% adalah kode verifikasi anda. Gunakan untuk memverifikasi pesanan anda.';
+	if($atts['message']!==null){
+  		$message = $atts['message'];
+  	}
+
+	return '
+	<div id="mgo_otp">
+		<p class="title_verification" id="verification_code">'.$title.'</p>
+		 <p style="color:#757472;text-align: center;font-size: 12px;padding: 0 20px;">'.$subtitle.'</p>
+		<input type="text" id="type_otp" name="type_otp" value="'.$type_otp.'" style="display:none;" />
+		<input type="text" id="message_otp" name="message_otp" value="'.$message.'" style="display:none;" />
+		<input type="text" id="redirect_link" name="redirect_link" value="'.$redirect.'" style="display:none;" />
+		<button id="kirim_ulang_kode" style="display:'.$kirim_ulang.';">Kirim Ulang Kode</button>
+	  	<div id="form_resend" style="display:'.$form_resend.';">
+	  		<input type="text" placeholder="No Handphone" class="input_phone" />
+	  		<div class="box_resend_button"><button id="resend" class="resend_button">Resend <span id="count"></span></button></div>
+	  	</div>
+		<p class="info_resend"></p>
+		<div class="box-spinner">
+		<div class="spinner" style="display:none;">
+			  <div class="rect1"></div>
+			  <div class="rect2"></div>
+			  <div class="rect3"></div>
+			  <div class="rect4"></div>
+			  <div class="rect5"></div>
+		</div>
+	  </div>
+	  <div class="dots">
+	    <div class="dot"></div>
+	    <div class="dot"></div>
+	    <div class="dot"></div>
+	    <div class="dot"></div>
+	  </div>
+	  <div class="numbers">
+	    <div class="number">1</div>
+	    <div class="number">2</div>
+	    <div class="number">3</div>
+	    <div class="number">4</div>
+	    <div class="number">5</div>
+	    <div class="number">6</div>
+	    <div class="number">7</div>
+	    <div class="number">8</div>
+	    <div class="number">9</div>
+	    <div class="number nol">0</div>
+	    <div class="number reset"><span>Reset</span></div>
+	  </div>
+	</div>
+	<style>
+
+	</style>
+	';
+}
+add_shortcode( 'mgootp', 'mgootp_func' );
+
+
+function generateRandomString($length) {
+    $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    $charactersLength = strlen($characters);
+    $randomString = '';
+    for ($i = 0; $i < $length; $i++) {
+        $randomString .= $characters[rand(0, $charactersLength - 1)];
+    }
+    return $randomString;
+}
+
+
+function mgo_get_data_telegram($token, $method) {
+    $urlweb = 'https://api.telegram.org/bot'.$token.'/'.$method;
+	$ch = curl_init();
+	curl_setopt($ch, CURLOPT_URL, $urlweb);
+	curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
+	curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+	curl_setopt($ch, CURLOPT_HEADER, 0);
+	curl_setopt($ch, CURLOPT_USERAGENT, $_SERVER['HTTP_USER_AGENT']);
+	curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
+	curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
+	curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+
+	$siteData = curl_exec($ch);
+	curl_close($ch);
+
+    $siteData = @json_decode($siteData);
+    if($siteData === null) {
+      // $ob is null because the json cannot be decoded
+      $siteData = 'error';
+    }
+    return $siteData;
+}
+
+
+
+function myaction_get_username_telegram() {
+	
+    $token = $_POST['datanya'][0];
+    
+	$telegramData = mgo_get_data_telegram($token, 'getMe'); // getMe, getUpdates, getUserProfilePhotos
+
+	if($telegramData!=='error'){
+		if($telegramData->ok==true){
+			echo '@'.$telegramData->result->username;
+		}else{
+			echo 'failed';
+		}
+	}else{
+		echo 'failed';
+	}
+    
+    wp_die();
+
+} 
+add_action( 'wp_ajax_myaction_get_username_telegram', 'myaction_get_username_telegram' );
+add_action( 'wp_ajax_nopriv_myaction_get_username_telegram', 'myaction_get_username_telegram' );
+
+
+function myaction_get_data_telegram() {
+	
+    global $wpdb;
+    $table_name = $wpdb->prefix . "mgo_settings";
+
+    $token 		 = $_POST['datanya'][0];
+    $usernameBot = $_POST['datanya'][1];
+
+	$telegramData = mgo_get_data_telegram($token, 'getUpdates');
+
+	// print_r($telegramData->result[0]->message->chat->id);
+
+	if($telegramData!=='error'){
+		if($telegramData->ok==true){
+
+			$chatID = $telegramData->result[0]->message->chat->id;
+
+			if(empty($chatID)){
+
+				echo '<span class="button" style="margin-top: 20px;border: 0;background: none;box-shadow: none;cursor: text;margin-left: -10px;color: #D00010;">Register Failed. Cek lagi chat bot anda atau test chat dahulu sebelum register setelah itu ulangi.</span>';
+
+			}else{
+
+				$wpdb->update(
+			        $table_name, //table
+			        array('data' => $token), //data
+			        array('type' => 'telegram_apikey_bot'), //where
+			        array('%s'), //data format
+			        array('%s') //where format
+			    );
+				$wpdb->update(
+			        $table_name, //table
+			        array('data' => $chatID), //data
+			        array('type' => 'telegram_id_bot'), //where
+			        array('%s'), //data format
+			        array('%s') //where format
+			    );
+				$wpdb->update(
+			        $table_name, //table
+			        array('data' => $usernameBot), //data
+			        array('type' => 'telegram_username_bot'), //where
+			        array('%s'), //data format
+			        array('%s') //where format
+			    );
+
+			    // SEND INFO
+				$message_tele = 'Bot anda berhasil di daftarkan.';
+				myaction_mgo_send2tg($token, $chatID, $message_tele);
+
+				echo '<span class="button" style="margin-top: 20px;border: 0;background: none;box-shadow: none;cursor: text;margin-left: -10px;color: #2EC26A;">Telegram Bot '.$usernameBot.' Register Successfully.</span>';
+
+			}
+
+		}else{
+			echo '<span class="button" style="margin-top: 20px;border: 0;background: none;box-shadow: none;cursor: text;margin-left: -10px;color: #C11D1D;">Register Failed!</span>';
+		}
+	}else{
+		echo '<span class="button" style="margin-top: 20px;border: 0;background: none;box-shadow: none;cursor: text;margin-left: -10px;color: #D00010;">Failed!</span>';
+	}
+
+    wp_die();
+
+} 
+add_action( 'wp_ajax_myaction_get_data_telegram', 'myaction_get_data_telegram' );
+add_action( 'wp_ajax_nopriv_myaction_get_data_telegram', 'myaction_get_data_telegram' );
+
+
+
+function myaction_mgo_send2tg($token, $chatID, $message_tele) {
+	
+	$urlweb = 'https://api.telegram.org/bot'.$token.'/sendMessage?text='.rawurlencode($message_tele).'&chat_id='.$chatID.'&parse_mode=Markdown';
+	// parse_mode=Markdown
+	// parse_mode=HTML
+
+	$ch = curl_init();
+	curl_setopt($ch, CURLOPT_URL, $urlweb);
+	curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
+	curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+	curl_setopt($ch, CURLOPT_HEADER, 0);
+	curl_setopt($ch, CURLOPT_USERAGENT, $_SERVER['HTTP_USER_AGENT']);
+	curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
+	curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
+	curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+
+	$siteData = curl_exec($ch);
+	curl_close($ch);
+
+	return $siteData;
+
+} 
+
+
+
+
+// define the caldera_forms_delete_entries callback 
+
+function action_caldera_forms_delete_entries( $entry_id ) { 
+    // make action magic happen here... 
+    // global $wpdb;
+    // $table_name = $wpdb->prefix . "cf_form_entry_values";
+
+    // $wpdb->query($wpdb->prepare("DELETE FROM $table_name WHERE slug = %s AND entry_id = %s", 'mgo_diskon', $entry_id));
+
+}; 
+         
+// add the action 
+add_action( 'caldera_forms_delete_entries', 'action_caldera_forms_delete_entries', 10, 1 );
+
+
+/*
+function myaction_update_order_status() {
+	
+    global $wpdb;
+    $table_name = $wpdb->prefix . "mgo_orders";
+
+    $orderid = $_POST['datanya'][0];
+    $statusid = $_POST['datanya'][1];
+    $additional_info = $_POST['datanya'][2];
+    $entry_idnya = $_POST['datanya'][3];
+    $form_idnya = $_POST['datanya'][4];
+
+    if($additional_info==''){
+    	$additional_info = null;
+    }
+
+    $jumlah_form = $wpdb->get_results('SELECT * from '.$table_name.' where order_id="'.$orderid.'" and  status_id="'.$statusid.'"');
+    if($jumlah_form==null){
+    	// INSERT DATA
+    	
+    	$user_id = wp_get_current_user()->ID;
+	    $insert = $wpdb->insert(
+	            $table_name, //table
+	            array('order_id' => $orderid, 'status_id' => $statusid, 'ket_order' => $additional_info, 'user_id' => $user_id, 'entry_idnya' => $entry_idnya, 'form_idnya' => $form_idnya), //data
+	            array('%s', '%s') //data format         
+	        );
+
+	    // statusid 5 = RTS
+	    if($statusid==5){
+	    	$wpdb->update(
+		        $table_name, //table
+		        array('status_rts' => 1), //data
+		        array('order_id' => $orderid, 'status_id' => 1 ), // where status_id 1 aja yang di set RTS, gak semua status dalam order itu
+		        array('%s'), //data format
+		        array('%s') //where format
+		    );
+	    }else{
+	    	$wpdb->update(
+		        $table_name, //table
+		        array('status_rts' => null), //data
+		        array('order_id' => $orderid ), // where
+		        array('%s'), //data format
+		        array('%s') //where format
+		    );
+	    }
+
+	    $getdata = $wpdb->get_results('SELECT * from '.$table_name.' where order_id="'.$orderid.'" and  status_id="'.$statusid.'"');
+
+	    if($insert){
+	    	echo 'success_'.$getdata[0]->id;
+		}
+		// echo 'success';
+    }else{
+    	echo 'not allowed!_0';
+    }
+    // echo 'success_1';
+    
+    wp_die();
+
+} 
+add_action( 'wp_ajax_myaction_update_order_status', 'myaction_update_order_status' );
+add_action( 'wp_ajax_nopriv_myaction_update_order_status', 'myaction_update_order_status' );
+
+*/
+
+function mgo_send_sms( $form, $referrer, $process_id, $entryid ){
+
+	global $wpdb;
+	global $mgovars;
+	$table_name = $wpdb->prefix . "cf_form_entry_values";
+    $table_name2 = $wpdb->prefix . "mgo_settings";
+    $table_name3 = $wpdb->prefix . "mgo_orders";
+    $table_name4 = $wpdb->prefix . "mgo_calculation";
+    $table_name5 = $wpdb->prefix . "cf_form_entries";
+    $table_name6 = $wpdb->prefix . "cf_forms";
+    $table_name7 = $wpdb->prefix . "mgo_order_log";
+
+    // FORM Input
+	$entry_id = $entryid;
+	$form_id = $form['ID'];
+
+	// FORM Setting
+	$sms_status_form = 0;
+    $default_message_status = 0;
+    $custom_message = '';
+    $wanotif_status_form = 0;
+    $wanotif_default_message_status = 0;
+    $wanotif_custom_message = '';
+
+    $tg_status = 0;
+	$tg_message_status = 0;
+	$tg_custom_message = '';
+	$tg_owner_status = 0;
+	$tg_csrotator_status = 0;
+	$tg_custom_status = 0;
+	$tg_custom_channel = '';
+
+	$query_form = $wpdb->get_results('SELECT * from '.$table_name4.' where id_form="'.$form_id.'" ');
+    if($query_form!=null){
+    	$sms_status_form = $query_form[0]->sms_status;
+    	$default_message_status = $query_form[0]->default_message_status;
+    	$custom_message = $query_form[0]->custom_message;
+    	$wanotif_status_form = $query_form[0]->wanotif_status_form;
+    	$wanotif_default_message_status = $query_form[0]->wanotif_default_message_status;
+    	$wanotif_custom_message = $query_form[0]->wanotif_custom_message;
+
+    	$tg_status = $query_form[0]->tg_status;
+    	$tg_message_status = $query_form[0]->tg_message_status;
+    	$tg_custom_message = $query_form[0]->tg_custom_message;
+    	$tg_owner_status = $query_form[0]->tg_owner_status;
+    	$tg_csrotator_status = $query_form[0]->tg_csrotator_status;
+    	$tg_custom_status = $query_form[0]->tg_custom_status;
+    	$tg_custom_channel = $query_form[0]->tg_custom_channel;
+
+    }
+
+	// GET GENERAL SETTINGS
+	$query = $wpdb->get_results('SELECT data from '.$table_name2.' where 
+		type="orderid_text" or type="orderid_max" or type="sms_status" or type="sms_userkey" or type="sms_passkey" or type="sms_apiurl" or type="sms_text" or type="wanotif_status" or type="wanotif_type" or type="wanotif_apikey" or type="wanotif_url" or type="wanotif_message" or type="wanotif_csrotator" or type="l_rotator" or type="telegram_status" or type="telegram_apikey_bot" or type="telegram_id_bot" or type="telegram_username_bot" or type="telegram_message" or type="telegram_single_channel" or type="telegram_csrotator_channel" or type="nama_produk_status" or type="nama_produk_other_name" or type="order_id_status" or type="order_id_other_name" ORDER BY id ASC');
+	$orderid_text = $query[0]->data;
+	$orderid_max = $query[1]->data;
+	$sms_status = $query[2]->data;
+	$sms_userkey = $query[3]->data;
+	$sms_passkey = $query[4]->data;
+	$sms_apiurl = $query[5]->data;
+	$sms_text = $query[6]->data;
+	$wanotif_status = $query[7]->data; // 0: off, 1: aktif
+	$wanotif_type = $query[8]->data; // 0: single sender, 1: cs rotator sender
+	$wanotif_apikey = $query[9]->data;
+	$wanotif_url = $query[10]->data;
+	$wanotif_message = $query[11]->data;
+	$wanotif_csrotator = $query[12]->data;
+	$l_rotator = $query[13]->data;
+
+	$telegram_status = $query[14]->data;
+	$telegram_apikey_bot = $query[15]->data;
+	$telegram_id_bot = $query[16]->data;
+	$telegram_username_bot = $query[17]->data;
+	$telegram_message = $query[18]->data;
+	$telegram_single_channel = $query[19]->data;
+	$telegram_csrotator_channel = $query[20]->data;
+
+	$nama_produk_status = $query[21]->data;
+    $nama_produk_other_name = $query[22]->data;
+	$order_id_status = $query[23]->data;
+    $order_id_other_name = $query[24]->data;
+
+
+	// cek nama produk setting
+    if($nama_produk_status=='1'){
+        $nama_produknya = 'Program';
+    }elseif($nama_produk_status=='2'){
+        $nama_produknya = 'Kegiatan';
+    }elseif($nama_produk_status=='3'){
+        $nama_produknya = $nama_produk_other_name;
+    }else{
+        $nama_produknya = 'Produk';
+    }
+
+    if($order_id_status=='1'){
+        $order_id_set = 'Invoice ID';
+    }elseif($order_id_status=='2'){
+        $order_id_set = 'Donation ID';
+    }elseif($order_id_status=='3'){
+        $order_id_set = $order_id_other_name;
+    }else{
+        $order_id_set = 'Order ID';
+    }
+
+
+	// ***********************************
+	// GET THE DATA
+	// ***********************************
+	// Set NEW ORDER ID
+    $randomid = GenerateID($orderid_max);
+	$fix_mgo_orderid = $orderid_text.$randomid;
+
+	$field_id_followup1 = '';
+	$field_id_followup2 = '';
+	$field_id_followup3 = '';
+	$field_id_csid = '';
+	$field_id_csmail = '';
+	$field_id_nama = '';
+
+	// GET DATA WITH FOREACH
+	$data = array();
+    foreach( $form[ 'fields' ] as $field_id => $field){
+        
+        // SET ORDER ID WHEN NULL
+        if ($field['slug']=='mgo_orderid') {
+        	$value_orderid = Caldera_Forms::get_field_data( $field_id, $form, $entry_id );
+        	if($value_orderid==''){
+        		$value = $fix_mgo_orderid;
+			    Caldera_Forms::set_field_data( $field_id, $value, $form, $entry_id );
+        	}
+		}
+
+        if ($field['slug']=='followup1') {
+        	$field_id_followup1 = $field_id;
+		}
+        if ($field['slug']=='followup2') {
+        	$field_id_followup2 = $field_id;
+		}
+        if ($field['slug']=='followup3') {
+        	$field_id_followup3 = $field_id;
+		}
+        if ($field['slug']=='mgo_csid') {
+        	$field_id_csid = $field_id;
+		}
+        if ($field['slug']=='mgo_csmail') {
+        	$field_id_csmail = $field_id;
+		}
+        if ($field['slug']=='mgo_nama') {
+        	$field_id_nama = $field_id;
+		}
+
+		$data[ $field['slug'] ] = Caldera_Forms::get_field_data( $field_id, $form );
+        $data[ $field_id ] = Caldera_Forms::get_field_data( $field_id, $form );
+        $data[ 'slug_'.$field_id ] = $field['slug'];
+
+		$isi = Caldera_Forms::get_field_data( $field_id, $form, $entry_id );
+		$slug = $field['slug'];
+
+	    	if($isi!='click'){
+	    		$pieces = explode("_", $slug);
+	      		$mgo = $pieces[0];
+
+	      		if($mgo=='mgo'){ // if($mgo=='mgo' && $isi!=''){
+      				if($slug!='mgo_pembayaran'){
+		      				if($pieces[1]!='csid'){
+		      					if($pieces[1]!='csmail'){
+		      						if($pieces[1]!='mgo_anonim'){
+			      						if($pieces[1]!='orderid2'){
+			      							if($pieces[1]!='kupon'){
+
+							      				if($pieces[1]=='total'){
+							      					if (strpos($isi, 'Rp') !== false) {
+													    $totalharga = explode("Rp", $isi);
+								      					$totalharga = "Rp ".str_replace(",",".",$totalharga[1]);
+								      					$isi = $totalharga;
+													}else{
+														$totalharga = "Rp ".number_format($isi,0,",",".");
+														$isi = $totalharga;
+													}
+							      				}
+							      				if($pieces[1]=='item' && $pieces[2]=='total'){
+							      					if (strpos($isi, 'Rp') !== false) {
+													    $itemtotal = explode("Rp", $isi);
+								      					$itemtotal = "Rp ".str_replace(",",".",$itemtotal[1]);
+								      					$isi = $itemtotal;
+													}
+							      				}
+							      				if (strpos($value, '{"opt') !== false) { // checkbox value > check
+						    					}else{
+						    						if($pieces[1]=='orderid'){
+								      					$judulnya = 'Order ID';
+								      				}else{
+
+								      					if($pieces[1]=='rp'){
+									      					$isi = 'Rp '.number_format($isi, 0, ',', '.');
+									      					$judulnya1 = str_replace('mgo_rp_','',$slug);
+									      					$judulnya2 = str_replace('mgo_','',$judulnya1);
+									      					$judulnya3 = str_replace('_',' ',$judulnya2);
+									      					$judulnya = ucwords($judulnya3);
+									      				}else{
+									      					
+															if (strpos($slug, '.opt') !== false) { // checkbox slug > check
+																$slugnya = explode(".opt", $slug);
+																$judulnya1 = str_replace('mgo_','',$slugnya[0]);
+										      					$judulnya2 = str_replace('_',' ',$judulnya1);
+										      					$judulnya = ucwords($judulnya2);
+															}else{
+										    					$judulnya1 = str_replace('mgo_','',$slug);
+										      					$judulnya2 = str_replace('_',' ',$judulnya1);
+										      					$judulnya = ucwords($judulnya2);
+										    				}
+								      					}
+								      				}
+								      				if (strpos($judulnya, '.opt') !== false) {
+														$slugnya = explode(".opt", $judulnya);
+														$judulnya = $slugnya[0];
+													}
+													if($slug=='mgo_courier'){
+														$isi = strtoupper($isi);
+													}
+
+													if($judulnya!='Anonim'){
+
+														if($judulnya=='Nama Produk'){
+															$judulnya = 'Nama '.$nama_produknya;
+														}
+
+														if($judulnya=='Order ID'){
+															$judulnya = $order_id_set;
+														}
+
+														if($judulnya=='Wa'){
+															$judulnya = 'Whatsapp';
+														}
+
+														$content .= $judulnya.' : *'.rtrim($isi).'* 
+';
+													}
+							    					
+						    					}
+						    				}
+						    			}
+						    		}
+						    	}
+						    }
+						}
+
+	    		} // end of mgo
+	    		
+	    	} // END IF isi
+		
+    }
+
+    // SET DETAIL ORDER FROM CONTENT FOREACH
+    $detail_order = $content;
+
+
+    // Get The data from foreach
+	$pembayaran = '';
+	if (!empty($data['mgo_pembayaran'])) {
+	     $pembayaran = $data['mgo_pembayaran'];
+	}
+	$item_total = '';
+	if (!empty($data['mgo_item_total'])) {
+	     $item_total = $data['mgo_item_total'];
+	}
+	$namanya = '';
+	if (!empty($data['mgo_nama'])) {
+	     $namanya = $data['mgo_nama'];
+	}
+	$orderid = '';
+	if (!empty($data['mgo_orderid'])) {
+	     $orderid = $data['mgo_orderid'];
+	}
+
+	$totalharga = '';
+	if (!empty($data['mgo_total'])) {
+	     $totalharga = $data['mgo_total'];
+	}
+	$phone = '';
+	if (!empty($data['mgo_wa'])) {
+	     $phone = $data['mgo_wa'];
+	}
+	$produk = '';
+	if (!empty($data['mgo_nama_produk'])) {
+	     $produk = $data['mgo_nama_produk'];
+	}
+	$csid = '';
+	if (!empty($data['mgo_csid'])) {
+	     $csid = $data['mgo_csid'];
+	}
+	$csmail = '';
+	if (!empty($data['mgo_csmail'])) {
+	     $csmail = $data['mgo_csmail'];
+	}
+	$phone_cs = '';
+	if($csid!=''){
+		$phone_cs = hp(get_the_author_meta('description',$csid));
+	}
+	$jumlah_barang = '';
+	if (!empty($data['mgo_jumlah_barang'])) {
+	     $jumlah_barang = $data['mgo_jumlah_barang'];
+	}
+
+
+	// FOLLOWUP1
+	$link_followup1 = '';
+	if (!empty($data['followup1'])) {
+	     $link_followup1 = $data['followup1'];
+	}
+    // SET FOLLOWUP1 WHEN NULL
+	if($data['followup1']=='1' || $data['followup1']==''){
+		if($field_id_followup1!=''){
+			$value = get_site_url().'?followup1='.$orderid.'&entryid=byemail';
+		    Caldera_Forms::set_field_data( $field_id_followup1, $value, $form, $entry_id );
+		    $link_followup1 = $value;
+		}
+	}	
+
+	// FOLLOWUP2
+	$link_followup2 = '';
+	if (!empty($data['followup2'])) {
+	     $link_followup2 = $data['followup2'];
+	}
+	// SET FOLLOWUP2 WHEN NULL
+	if($data['followup2']=='2' || $data['followup2']==''){
+		if($field_id_followup2!=''){
+			$value = get_site_url().'?followup2='.$orderid.'&entryid=byemail';
+		    Caldera_Forms::set_field_data( $field_id_followup2, $value, $form, $entry_id );
+		    $link_followup2 = $value;
+		}
+	}
+
+	// FOLLOWUP3
+	$link_followup3 = '';
+	if (!empty($data['followup3'])) {
+	     $link_followup3 = $data['followup3'];
+	}
+	// SET FOLLOWUP3 WHEN NULL
+	if($data['followup3']=='3' || $data['followup3']==''){
+		if($field_id_followup3!=''){
+			$value = get_site_url().'?followup3='.$orderid.'&entryid=byemail';
+		    Caldera_Forms::set_field_data( $field_id_followup3, $value, $form, $entry_id );
+		    $link_followup3 = $value;
+		}
+	}
+
+
+    // CS NAME
+	$cs_name = 'null';
+    if (is_numeric($csid)){
+        $args2 = array( 'blog_id' => 0, 'search' => $csid, 'search_columns' => array( 'ID' ) );
+		$get_name = get_users( $args2 );
+
+        if($get_name!=null){
+            $cs_name = $get_name[0]->display_name; // nama asli
+        }
+    }
+
+
+	// ***************************************************
+	// ORDER LOG
+	// ***************************************************
+	/*
+	if($l_rotator!=''){
+		if($l_rotator!='abc' && $orderid!=''){
+			// GET User Agent
+			$details = json_decode(file_get_contents("http://ip-api.com/json/"));
+			if (array_key_exists('query', $details)) {
+				$ip = $details->query;
+				$city = $details->city;
+				$region = $details->regionName;
+				$country = $details->country;
+				$isp = $details->isp;
+			}else{
+				$ip = '';
+				$city = '';
+				$region = '';
+				$country = '';
+				$isp = '';
+			}
+
+			$user_os        = getOS();
+			$user_browser   = getBrowser();
+
+			// insert order log
+			$wpdb->insert(
+				$table_name7, // table
+				array('id_form' => $form_id,
+					'id_entry' => $entryid,
+					'id_order' => $orderid,
+					'os' => $user_os,
+					'browser' => $user_browser,
+					'ip' => $ip,
+					'city' => $city,
+					'region' => $region,
+					'country' => $country,
+					'isp' => $isp),
+				array('%s', '%s')
+			);
+		}
+	}
+	*/
+
+
+	//**********************************
+	// SET CS ROTATOR - BALANCER
+	//**********************************
+
+	// Today Order
+    $id_cs_form = $wpdb->get_results('SELECT id_cs,rotator_status from '.$table_name4.' where id_form="'.$form_id.'"');
+
+    // SET TODAY - 7 HOURS
+    $today_now_start = date("Y-m-d 00:01");
+    $time_start = strtotime($today_now_start);
+    $date_start = strtotime('-7 hours', $time_start);
+    $today_now_start = date("Y-m-d 00:01");
+    $filter_datestart_today = date('Y-m-d H:i', $date_start);
+
+    // SET TODAY MIDNIGNHT
+    $today_now_end = date("Y-m-d 23:59:59");
+    
+    if ($id_cs_form==null) {
+    }else{
+    	if($id_cs_form[0]->id_cs!=''){
+	    	$rotator_status = $id_cs_form[0]->rotator_status;
+	    	$id_cs_form = explode(",", $id_cs_form[0]->id_cs);
+		    $datanya = [];
+		    if($rotator_status=='0'){
+		    	foreach($id_cs_form as $key => $value){
+			    	$id_csnya = $wpdb->get_results('
+			    	SELECT value as id_cs,count(value) as jumlah_order FROM '.$table_name.' a 
+			    	LEFT JOIN '.$table_name5.' b ON a.entry_id=b.id
+			    	where slug="mgo_csid"
+			    	AND form_id="'.$form_id.'"
+			    	AND value="'.$value.'"
+			    	AND datestamp BETWEEN "'.$filter_datestart_today.'" AND "'.$today_now_end.'"
+			    	GROUP BY value ORDER BY jumlah_order ASC ');
+
+			    	if($id_csnya!=null){
+			    		$datanya[] = array('id_cs' => $value, 'order' => $id_csnya[0]->jumlah_order);
+			    	}else{
+			    		$datanya[] = array('id_cs' => $value, 'order' => 0);
+			    	}
+			    }
+
+			    aasort($datanya,"order");
+				$id_cs_order_terendah = $datanya[0]['id_cs'];
+
+				$args2 = array( 'blog_id' => 0, 'search' => $id_cs_order_terendah, 'search_columns' => array( 'ID' ) );
+			    $get_name = get_users( $args2 );
+
+			    if($get_name==null){
+			        $cs_mail = '-';
+			    }else{
+			        $cs_mail = $get_name[0]->user_email;
+			    }
+
+			    // GLOBAL VAR
+				$csmailnya = $cs_mail;
+				$csid_update = $id_cs_order_terendah;
+
+				// SET NEW CS ID
+				Caldera_Forms::set_field_data( $field_id_csid, $csid_update, $form, $entry_id );
+
+				// SET NEW CS MAIL
+			    Caldera_Forms::set_field_data( $field_id_csmail, $csmailnya, $form, $entry_id );
+
+			    // SET NAME CS
+			    $args2 = array( 'blog_id' => 0, 'search' => $csid_update, 'search_columns' => array( 'ID' ) );
+				$get_name = get_users( $args2 );
+		        if($get_name!=null){
+		            $cs_name = $get_name[0]->display_name; // nama asli
+		        }			    
+
+			}
+		}
+		
+	}
+	
+
+	// **********************
+	// SET THE SAME CS ID where NAME IS same on order before
+	// **********************
+	
+	$orderan_check = $wpdb->get_results('SELECT a.entry_id, a.value, b.datestamp FROM '.$table_name.' a LEFT JOIN '.$table_name5.' b ON a.entry_id=b.id where a.value = "'.$namanya.'" and b.datestamp >= DATE_SUB(NOW(), INTERVAL 24 HOUR)');
+
+	$jumlah_yang_sama = count($orderan_check);
+	if($jumlah_yang_sama>=1){
+
+		$get_csidnya = $wpdb->get_results('SELECT value from '.$table_name.' where entry_id="'.$orderan_check[0]->entry_id.'" and slug="mgo_csid"');
+		if($get_csidnya!=null){
+
+			$chek_cs_is_availlable_on_rotator = false;
+
+			$id_cs_form = $wpdb->get_results('SELECT id_cs,rotator_status from '.$table_name4.' where id_form="'.$form_id.'"');
+
+			if ($id_cs_form==null) {
+		    }else{
+		    	if($id_cs_form[0]->id_cs!=''){
+			    	$rotator_status = $id_cs_form[0]->rotator_status;
+			    	$id_cs_form = explode(",", $id_cs_form[0]->id_cs);
+
+				    if (in_array($get_csidnya[0]->value, $id_cs_form)) {
+						$chek_cs_is_availlable_on_rotator = true;
+					}
+				}
+			}
+
+			if($chek_cs_is_availlable_on_rotator==true){
+				$value_csidnya = $get_csidnya[0]->value;
+				Caldera_Forms::set_field_data( $field_id_csid, $value_csidnya, $form, $entry_id );
+				// set cs id
+			    $csid = $value_csidnya;
+			    $csid_update = $value_csidnya;
+
+			    // GET EMAIL CS ID
+			    $args2 = array( 'blog_id' => 0, 'search' => $csid, 'search_columns' => array( 'ID' ) );
+			    $get_name = get_users( $args2 );
+			    if($get_name==null){
+			        $cs_mail = '-';
+			    }else{
+			        $cs_mail = $get_name[0]->user_email;
+			        $cs_name = $get_name[0]->display_name;
+			    }
+			    
+			    // set cs mail
+			    $csmail = $cs_mail;
+			    Caldera_Forms::set_field_data( $field_id_csmail, $csmail, $form, $entry_id );
+			}
+			
+
+		}
+	}
+	
+
+
+	// ***************************************************
+	// SEND SMS
+	// ***************************************************
+
+	// Klo 1 Pakai Custom Message yang ada di FORM
+	if($default_message_status==1){
+		$sms_text = $custom_message;
+	}
+
+	// SETUP TEXT
+	if (strpos($sms_text, '[mgo_orderid]') !== false || strpos($sms_text, '[mgo_csid]') !== false || strpos($sms_text, '[mgo_nama]') !== false || strpos($sms_text, '[mgo_total]') !== false || strpos($sms_text, '[mgo_wa]') !== false || strpos($sms_text, '[mgo_nama_produk]') !== false || strpos($sms_text, '[mgo_pembayaran]') !== false || strpos($sms_text, '[mgo_item_total]') !== false) {
+		$set_csname = str_replace('[mgo_csid]', $cs_name, $sms_text);
+		$set_csmail = str_replace('[mgo_csmail]', $csmail, $set_csname);
+		$set_orderid = str_replace('[mgo_orderid]', $orderid, $set_csmail);
+		$set_nama = str_replace('[mgo_nama]', $namanya, $set_orderid);
+		$set_produk = str_replace('[mgo_nama_produk]', $produk, $set_nama);
+		$set_total = str_replace('[mgo_total]', $totalharga, $set_produk);
+		$set_phone = str_replace('[mgo_wa]', $phone, $set_total);
+		$set_pembayaran = str_replace('[mgo_pembayaran]', $pembayaran, $set_phone);
+		$set_item_total = str_replace('[mgo_item_total]', $item_total, $set_pembayaran);
+		$set_followup1 = str_replace('[followup1]', $link_followup1, $set_item_total);
+		$set_followup2 = str_replace('[followup2]', $link_followup2, $set_followup1);
+		$set_followup3 = str_replace('[followup3]', $link_followup3, $set_followup2);
+		$set_phone_cs = str_replace('[mgo_cswa]', $phone_cs, $set_followup3);
+		$set_jumlah_barang = str_replace('[mgo_jumlah_barang]', $jumlah_barang, $set_phone_cs);
+		$set_space = str_replace(' ', '%20', $set_jumlah_barang);
+		$textnya = set_whatsapp_format($set_space);
+	}else{
+		$set_space = str_replace(' ', '%20', $sms_text);
+		$textnya = set_whatsapp_format($set_space);
+	}
+
+	$textnya_for_reguler = strip_tags($textnya);
+	$textnya_for_twoway = str_replace('%20', ' ', $textnya_for_reguler);
+
+	// cek settingan API SMS AKTIF GAK
+    if($sms_status==1){
+
+    	// cek juga settingan API SMS ke isi semua dan settingan di FORM activated atau 1
+    	if($sms_userkey!='' && $sms_userkey!='' && $sms_userkey!='' && $sms_status_form==1){
+
+			// SEND SMS
+			if($sms_apiurl=='http://reguler.sms-notifikasi.com/apps/smsapi.php' || $sms_apiurl=='http://masking.sms-notifikasi.com/apps/smsapi.php' || $sms_apiurl=='https://reguler.zenziva.net/apps/smsapi.php' || $sms_apiurl=='https://alpha.zenziva.net/apps/smsapi.php'){
+
+				$spintax = new Spintax();
+				$textnya_for_reguler = $spintax->process($textnya_for_reguler);
+
+			    $url = $sms_apiurl.'?userkey='.$sms_userkey.'&passkey='.$sms_passkey.'&nohp='.$phone.'&pesan='.$textnya_for_reguler;
+
+				$curl = curl_init();
+				curl_setopt_array($curl, array(
+				  CURLOPT_URL => $url,
+				  CURLOPT_RETURNTRANSFER => true,
+				  CURLOPT_TIMEOUT => 30,
+				  CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+				  CURLOPT_CUSTOMREQUEST => "GET",
+				  CURLOPT_HTTPHEADER => array(
+				    "cache-control: no-cache"
+				  ),
+				));
+
+				$response = curl_exec($curl);
+				$err = curl_error($curl);
+
+				curl_close($curl);
+
+			}else{
+
+				$spintax = new Spintax();
+				$textnya_for_twoway = $spintax->process($textnya_for_twoway);
+
+				$curlHandle = curl_init();
+				curl_setopt($curlHandle, CURLOPT_URL, $sms_apiurl);
+				curl_setopt($curlHandle, CURLOPT_HEADER, 0);
+				curl_setopt($curlHandle, CURLOPT_RETURNTRANSFER, 1);
+				curl_setopt($curlHandle, CURLOPT_SSL_VERIFYHOST, 2);
+				curl_setopt($curlHandle, CURLOPT_SSL_VERIFYPEER, 0);
+				curl_setopt($curlHandle, CURLOPT_TIMEOUT,30);
+				curl_setopt($curlHandle, CURLOPT_POST, 1);
+				curl_setopt($curlHandle, CURLOPT_POSTFIELDS, array(
+				    'userkey' => $sms_userkey,
+				    'passkey' => $sms_passkey,
+				    'nohp' => $phone,
+				    'pesan' => $textnya_for_twoway
+				));
+				$results = json_decode(curl_exec($curlHandle), true);
+				curl_close($curlHandle);						                                
+			}
+
+		}
+
+	}
+
+
+	//*******************************************
+	// SEND WANOTIF
+	//*******************************************
+
+	// CEK SETTINGAN GENERAL WANOTIF AKTIF ATAU GAK
+	if($wanotif_status==1){
+		
+		// CEK SETTINGAN FORM WANOTIF AKTIF ATAU GAK
+		if($wanotif_status_form==1){
+
+			// 0: default message, 1: custom message
+	    	if($wanotif_default_message_status==0){
+	    		$message = $wanotif_message;
+	    	}else{
+	    		$message = $wanotif_custom_message;
+	    	}
+
+	    	// CEK [mgo_no_bold]
+		    $nobold = 0;
+		    $detail_order_update = $detail_order;
+		    if (strpos($message, '[mgo_no_bold]') !== false){
+		    	$detail_order_update = str_replace('*', '', $detail_order_update);
+		    }
+
+		    // exit();
+
+	    	// UPDATE MESSAGE
+	    	$set_csname = str_replace('[mgo_csid]', $cs_name, $message);
+	    	$set_csmail = str_replace('[mgo_csmail]', $csmail, $set_csname);
+	    	$set_orderid = str_replace('[mgo_orderid]', $orderid, $set_csmail);
+			$set_nama = str_replace('[mgo_nama]', $namanya, $set_orderid);
+			$set_produk = str_replace('[mgo_nama_produk]', $produk, $set_nama);
+			$set_total = str_replace('[mgo_total]', $totalharga, $set_produk);
+			$set_phone = str_replace('[mgo_wa]', $phone, $set_total);
+			$set_pembayaran = str_replace('[mgo_pembayaran]', $pembayaran, $set_phone);
+			$set_item_total = str_replace('[mgo_item_total
